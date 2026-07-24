@@ -9,6 +9,9 @@ let
   cfg = config.programs.ghidra-mcp;
   system = pkgs.stdenv.hostPlatform.system;
   flakePackages = self.packages.${system};
+  ghidraMcpExtension = flakePackages.ghidra-mcp-extension;
+  ghidraMcpVersion = ghidraMcpExtension.version;
+  inherit (ghidraMcpExtension) requiredGhidraVersion;
 in
 {
   options.programs.ghidra-mcp = {
@@ -38,8 +41,8 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = pkgs.ghidra.version == "12.1.2";
-        message = "GhidraMCP 5.14.2 requires pkgs.ghidra 12.1.2.";
+        assertion = pkgs.ghidra.version == requiredGhidraVersion;
+        message = "GhidraMCP ${ghidraMcpVersion} requires pkgs.ghidra ${requiredGhidraVersion}.";
       }
       {
         assertion = !cfg.enableCodexIntegration || config.programs.codex.enable;

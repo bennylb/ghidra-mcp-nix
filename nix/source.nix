@@ -1,12 +1,18 @@
 {
   fetchFromGitHub,
   lib,
+  release,
 }:
+let
+  inherit (release.ghidraMcp) source;
+in
 fetchFromGitHub {
-  owner = "bethington";
-  repo = "ghidra-mcp";
-  rev = "f4a1175b23f797cb19fb0f66c4ba19ff72684e72";
-  hash = "sha256-2EMETCttJAz53GQaJDHtegb8+T2cHKmHZVMPrV5Cwxc=";
+  inherit (source)
+    hash
+    owner
+    repo
+    rev
+    ;
 
   meta = {
     homepage = "https://github.com/bethington/ghidra-mcp";

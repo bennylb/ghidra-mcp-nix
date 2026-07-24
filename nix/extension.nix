@@ -1,16 +1,16 @@
 {
-  fetchFromGitHub,
   ghidra,
   jdk21,
   lib,
   maven,
+  release,
+  src,
   stdenv,
   unzip,
 }:
 let
-  version = "5.14.2";
-  ghidraVersion = "12.1.2";
-  src = import ./source.nix { inherit fetchFromGitHub lib; };
+  inherit (release.ghidraMcp) version;
+  ghidraVersion = release.ghidraMcp.requiredGhidraVersion;
 
   ghidraJars = [
     {
@@ -144,8 +144,10 @@ maven.buildMavenPackage {
 
   passthru = {
     inherit ghidraVersion;
-    sourceCommit = "f4a1175b23f797cb19fb0f66c4ba19ff72684e72";
-    tagObject = "bbfed0e02b64f0f93f6d448b75ca4d391d0dddca";
+    releaseMetadata = release.ghidraMcp;
+    requiredGhidraVersion = ghidraVersion;
+    sourceCommit = release.ghidraMcp.source.rev;
+    tagObject = release.ghidraMcp.source.tagObject;
   };
 
   meta = {
