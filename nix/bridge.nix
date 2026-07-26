@@ -1,5 +1,4 @@
 {
-  fetchFromGitHub,
   lib,
   makeWrapper,
   python313,
@@ -10,25 +9,10 @@
 }:
 let
   inherit (release.ghidraMcp) version;
-  inherit (release) mcpSdk;
 
-  mcp_1_28_1 = python313Packages.mcp.overridePythonAttrs (_old: {
-    inherit (mcpSdk) version;
-    src = fetchFromGitHub {
-      inherit (mcpSdk.source)
-        hash
-        owner
-        repo
-        rev
-        ;
-    };
-    doCheck = false;
-  });
+  mcp_1_28_1 = python313Packages.callPackage ./mcp-sdk.nix { inherit release; };
 
-  pythonEnv = python313.withPackages (_: [
-    mcp_1_28_1
-    python313Packages.requests
-  ]);
+  pythonEnv = python313.withPackages (_: [ mcp_1_28_1 ]);
 in
 stdenvNoCC.mkDerivation {
   pname = "ghidra-mcp-bridge";

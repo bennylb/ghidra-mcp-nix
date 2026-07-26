@@ -61,8 +61,9 @@ and removing the extension itself is handled by Nix generations.
 ## Updating
 
 Update the version, source commit, source hash, required Ghidra version, and
-MCP SDK override together. Set the Maven dependency hash to `lib.fakeHash`,
-build once to obtain the expected hash, then record it and rebuild offline.
+MCP SDK package definition (`nix/mcp-sdk.nix`) together. Set the Maven
+dependency hash to `lib.fakeHash`, build once to obtain the expected hash, then
+record it and rebuild offline.
 
 ```console
 nix build .#ghidra-mcp-extension
@@ -73,7 +74,7 @@ The extension and bridge must always use the same upstream source commit.
 
 ## Dependency boundary
 
-- Runtime: Ghidra and its wrapped Java runtime, Python, `mcp`, and `requests`.
+- Runtime: Ghidra and its wrapped Java runtime, Python, and `mcp`.
 - Build only: Maven, JDK 21, and the fixed Maven dependency repository.
 - Excluded: debugger, tests, development dependencies, and `fun-doc`.
 
