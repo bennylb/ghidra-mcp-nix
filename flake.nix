@@ -61,53 +61,11 @@
 
       homeManagerModules.default = import ./modules/home-manager.nix { inherit self; };
 
-      checks.${system} = {
-        inherit (ghidraMcp)
-          ghidra-mcp-bridge
-          ghidra-mcp-extension
-          ghidra-with-mcp
-          ;
-
-        home-manager =
-          (home-manager.lib.homeManagerConfiguration {
-            inherit pkgs;
-            modules = [
-              self.homeManagerModules.default
-              {
-                home = {
-                  username = "ghidra-mcp-test";
-                  homeDirectory = "/Users/ghidra-mcp-test";
-                  stateVersion = "24.11";
-                };
-                programs.ghidra-mcp.enable = true;
-              }
-            ];
-          }).activationPackage;
-
-        home-manager-codex =
-          (home-manager.lib.homeManagerConfiguration {
-            inherit pkgs;
-            modules = [
-              self.homeManagerModules.default
-              {
-                home = {
-                  username = "ghidra-mcp-test";
-                  homeDirectory = "/Users/ghidra-mcp-test";
-                  stateVersion = "24.11";
-                };
-                programs = {
-                  codex = {
-                    enable = true;
-                    package = null;
-                  };
-                  ghidra-mcp = {
-                    enable = true;
-                    enableCodexIntegration = true;
-                  };
-                };
-              }
-            ];
-          }).activationPackage;
+      checks.${system} = import ./nix/checks.nix {
+        inherit (pkgs) lib;
+        inherit pkgs ghidraMcp;
+        homeManagerLib = home-manager.lib;
+        homeManagerModule = self.homeManagerModules.default;
       };
     };
 }
