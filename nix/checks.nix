@@ -50,20 +50,9 @@ let
     ) "${checkName}: home.sessionVariables must not contain GHIDRA_HOME";
     true;
 
-  mkHomeManagerCheck =
-    {
-      name,
-      extraModules ? [ ],
-      extraAssertions ? (_config: true),
-    }:
-    let
-      hm = mkHomeManagerConfiguration extraModules;
-      evaluated =
-        assert assertHomePackagesAndNoGhidraHome name hm.config;
-        assert extraAssertions hm.config;
-        true;
-    in
-    assert evaluated;
+  # Derivation-only: assert about hm.config at each call site before invoking.
+  mkHomeManagerActivationCheck =
+    name: hm:
     pkgs.runCommand name
       {
         inherit (hm) activationPackage;
@@ -272,46 +261,45 @@ assert lib.assertMsg (lib.any (a: a.message == unsupportedMessage) failedUnsuppo
         echo ok > "$out/result"
       '';
 
-  home-manager-config = mkHomeManagerCheck {
-    name = "home-manager-config";
-    extraModules = [
-      {
-        programs.ghidra-mcp.enable = true;
-      }
-    ];
-  };
+  home-manager-config =
+    let
+      name = "home-manager-config";
+      hm = mkHomeManagerConfiguration [
+        {
+          programs.ghidra-mcp.enable = true;
+        }
+      ];
+    in
+    assert assertHomePackagesAndNoGhidraHome name hm.config;
+    mkHomeManagerActivationCheck name hm;
 
-  home-manager-codex-config = mkHomeManagerCheck {
-    name = "home-manager-codex-config";
-    extraModules = [
-      {
-        programs = {
-          codex = {
-            enable = true;
-            package = null;
+  home-manager-codex-config =
+    let
+      name = "home-manager-codex-config";
+      hm = mkHomeManagerConfiguration [
+        {
+          programs = {
+            codex = {
+              enable = true;
+              package = null;
+            };
+            ghidra-mcp = {
+              enable = true;
+              enableCodexIntegration = true;
+            };
           };
-          ghidra-mcp = {
-            enable = true;
-            enableCodexIntegration = true;
-          };
-        };
-      }
-    ];
-    extraAssertions =
-      config:
-      (
-        let
-          expected = {
-            command = "${ghidra-mcp-bridge}/bin/bridge-mcp-ghidra";
-            args = [ ];
-          };
-          actual = config.programs.codex.settings.mcp_servers.ghidra;
-        in
-        assert lib.assertMsg (actual == expected)
-          "home-manager-codex-config: programs.codex.settings.mcp_servers.ghidra must equal ${builtins.toJSON expected}, got ${builtins.toJSON actual}";
-        true
-      );
-  };
+        }
+      ];
+      expected = {
+        command = "${ghidra-mcp-bridge}/bin/bridge-mcp-ghidra";
+        args = [ ];
+      };
+      actual = hm.config.programs.codex.settings.mcp_servers.ghidra;
+    in
+    assert assertHomePackagesAndNoGhidraHome name hm.config;
+    assert lib.assertMsg (actual == expected)
+      "${name}: programs.codex.settings.mcp_servers.ghidra must equal ${builtins.toJSON expected}, got ${builtins.toJSON actual}";
+    mkHomeManagerActivationCheck name hm;
 
   unsupported-system-message = pkgs.runCommand "unsupported-system-message" { } ''
     set -euo pipefail
