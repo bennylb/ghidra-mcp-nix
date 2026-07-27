@@ -6,6 +6,7 @@
   release,
   src,
   stdenvNoCC,
+  supportedSystems,
 }:
 let
   inherit (release.ghidraMcp) version;
@@ -43,6 +44,6 @@ stdenvNoCC.mkDerivation {
     homepage = "https://github.com/bethington/ghidra-mcp";
     license = lib.licenses.asl20;
     mainProgram = "bridge-mcp-ghidra";
-    platforms = [ "aarch64-darwin" ];
+    platforms = supportedSystems;
   };
 }

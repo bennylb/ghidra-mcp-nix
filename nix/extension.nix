@@ -7,6 +7,7 @@
   src,
   stdenv,
   unzip,
+  supportedSystems,
 }:
 let
   inherit (release.ghidraMcp) version requiredGhidraVersion;
@@ -151,6 +152,6 @@ maven.buildMavenPackage {
     description = "Ghidra extension providing the GhidraMCP HTTP server";
     homepage = "https://github.com/bethington/ghidra-mcp";
     license = lib.licenses.asl20;
-    platforms = [ "aarch64-darwin" ];
+    platforms = supportedSystems;
   };
 }

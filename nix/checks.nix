@@ -4,6 +4,7 @@
   ghidraMcp,
   homeManagerLib,
   homeManagerModule,
+  supportedSystems,
 }:
 let
   inherit (ghidraMcp)
@@ -77,7 +78,60 @@ let
         ln -s "$activationPackage" "$out/activation-package"
         echo ok > "$out/result"
       '';
+
+  # Unsupported host must fail with a direct compatibility message, not
+  # "attribute '…' missing" from self.packages.${system}.
+  unsupportedSystem = "x86_64-linux";
+  unsupportedMessage = "programs.ghidra-mcp is not supported on system ${unsupportedSystem}; supported systems: ${lib.concatStringsSep ", " supportedSystems}";
+
+  unsupportedPkgs = pkgs // {
+    stdenv = pkgs.stdenv // {
+      hostPlatform = pkgs.stdenv.hostPlatform // {
+        system = unsupportedSystem;
+      };
+    };
+  };
+
+  unsupportedSystemEval = lib.evalModules {
+    specialArgs = {
+      pkgs = unsupportedPkgs;
+    };
+    modules = [
+      (pkgs.path + "/nixos/modules/misc/assertions.nix")
+      # Stub Home Manager option trees so the module can be evaluated alone.
+      {
+        options.home.packages = lib.mkOption {
+          type = lib.types.listOf lib.types.package;
+          default = [ ];
+        };
+        options.programs.codex = {
+          enable = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+          };
+          settings = lib.mkOption {
+            type = lib.types.attrs;
+            default = { };
+          };
+        };
+      }
+      (import ../modules/home-manager.nix {
+        # Empty package set: unsupported path must not force package lookup.
+        self = {
+          packages = { };
+        };
+        inherit supportedSystems;
+      })
+      {
+        programs.ghidra-mcp.enable = true;
+      }
+    ];
+  };
+
+  failedUnsupportedAssertions = builtins.filter (a: !a.assertion) unsupportedSystemEval.config.assertions;
 in
+assert lib.assertMsg (lib.any (a: a.message == unsupportedMessage) failedUnsupportedAssertions)
+  "unsupported-system-message: expected assertion ${unsupportedMessage}, got ${builtins.toJSON failedUnsupportedAssertions}";
 {
   bridge-smoke =
     let
@@ -258,4 +312,11 @@ in
         true
       );
   };
+
+  unsupported-system-message = pkgs.runCommand "unsupported-system-message" { } ''
+    set -euo pipefail
+    mkdir -p "$out"
+    printf '%s\n' ${lib.escapeShellArg unsupportedMessage} > "$out/message"
+    echo ok > "$out/result"
+  '';
 }

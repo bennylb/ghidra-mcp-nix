@@ -18,9 +18,12 @@
       ...
     }:
     let
+      # Product support policy: declared once at the flake composition edge.
       system = "aarch64-darwin";
+      supportedSystems = [ system ];
+
       pkgs = import nixpkgs { inherit system; };
-      ghidraMcp = pkgs.callPackage ./nix/packages.nix { };
+      ghidraMcp = pkgs.callPackage ./nix/packages.nix { inherit supportedSystems; };
     in
     {
       packages.${system} = {
@@ -59,11 +62,13 @@
 
       formatter.${system} = pkgs.nixfmt-tree;
 
-      homeManagerModules.default = import ./modules/home-manager.nix { inherit self; };
+      homeManagerModules.default = import ./modules/home-manager.nix {
+        inherit self supportedSystems;
+      };
 
       checks.${system} = import ./nix/checks.nix {
         inherit (pkgs) lib;
-        inherit pkgs ghidraMcp;
+        inherit pkgs ghidraMcp supportedSystems;
         homeManagerLib = home-manager.lib;
         homeManagerModule = self.homeManagerModules.default;
       };

@@ -71,6 +71,7 @@ buildPythonPackage {
     homepage = "https://github.com/modelcontextprotocol/python-sdk";
     changelog = "https://github.com/modelcontextprotocol/python-sdk/releases/tag/${release.mcpSdk.source.tag}";
     license = lib.licenses.mit;
-    platforms = [ "aarch64-darwin" ];
+    # Pure Python library: real portability, not product support policy.
+    platforms = lib.platforms.unix;
   };
 }
