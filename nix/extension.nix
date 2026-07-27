@@ -9,8 +9,7 @@
   unzip,
 }:
 let
-  inherit (release.ghidraMcp) version;
-  ghidraVersion = release.ghidraMcp.requiredGhidraVersion;
+  inherit (release.ghidraMcp) version requiredGhidraVersion;
 
   ghidraJars = [
     {
@@ -90,27 +89,26 @@ let
   seedGhidraMavenRepository = lib.concatMapStringsSep "\n" (
     jar:
     let
-      artifactDirectory = "$out/.m2/ghidra/${jar.artifact}/${ghidraVersion}";
+      artifactDirectory = "$out/.m2/ghidra/${jar.artifact}/${requiredGhidraVersion}";
     in
     ''
       mkdir -p "${artifactDirectory}"
       cp "${ghidra}/lib/ghidra/${jar.path}" \
-        "${artifactDirectory}/${jar.artifact}-${ghidraVersion}.jar"
-      cat > "${artifactDirectory}/${jar.artifact}-${ghidraVersion}.pom" <<'EOF'
+        "${artifactDirectory}/${jar.artifact}-${requiredGhidraVersion}.jar"
+      cat > "${artifactDirectory}/${jar.artifact}-${requiredGhidraVersion}.pom" <<'EOF'
       <project xmlns="http://maven.apache.org/POM/4.0.0">
         <modelVersion>4.0.0</modelVersion>
         <groupId>ghidra</groupId>
         <artifactId>${jar.artifact}</artifactId>
-        <version>${ghidraVersion}</version>
+        <version>${requiredGhidraVersion}</version>
         <packaging>jar</packaging>
       </project>
       EOF
     ''
   ) ghidraJars;
 in
-assert lib.assertMsg (
-  ghidra.version == ghidraVersion
-) "ghidra-mcp ${version} requires Ghidra ${ghidraVersion}, but nixpkgs provides ${ghidra.version}";
+assert lib.assertMsg (ghidra.version == requiredGhidraVersion)
+  "ghidra-mcp ${version} requires Ghidra ${requiredGhidraVersion}, but nixpkgs provides ${ghidra.version}";
 maven.buildMavenPackage {
   pname = "ghidra-mcp-extension";
   inherit src version;
@@ -136,16 +134,15 @@ maven.buildMavenPackage {
 
     test -f "$extensionRoot/GhidraMCP/extension.properties"
     test -f "$extensionRoot/GhidraMCP/lib/GhidraMCP-${version}.jar"
-    grep -F "version=${ghidraVersion}" "$extensionRoot/GhidraMCP/extension.properties"
+    grep -F "version=${requiredGhidraVersion}" "$extensionRoot/GhidraMCP/extension.properties"
     touch "$extensionRoot/GhidraMCP/.dbDirLock"
 
     runHook postInstall
   '';
 
   passthru = {
-    inherit ghidraVersion;
     releaseMetadata = release.ghidraMcp;
-    requiredGhidraVersion = ghidraVersion;
+    inherit requiredGhidraVersion;
     sourceCommit = release.ghidraMcp.source.rev;
     tagObject = release.ghidraMcp.source.tagObject;
   };

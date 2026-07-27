@@ -82,18 +82,20 @@ in
   bridge-smoke =
     let
       pythonEnv = pkgs.python313.withPackages (_: [ ghidra-mcp-bridge.passthru.mcp ]);
+      expectedMcpVersion = ghidra-mcp-bridge.passthru.mcp.version;
     in
     pkgs.runCommand "bridge-smoke"
       {
         nativeBuildInputs = [ pythonEnv ];
         bridge = ghidra-mcp-bridge;
+        inherit expectedMcpVersion;
       }
       ''
         set -euo pipefail
 
         mcp_version="$(python -c 'import importlib.metadata; print(importlib.metadata.version("mcp"))')"
-        if [ "$mcp_version" != "1.28.1" ]; then
-          echo "bridge-smoke: expected installed mcp version 1.28.1, got $mcp_version" >&2
+        if [ "$mcp_version" != "$expectedMcpVersion" ]; then
+          echo "bridge-smoke: expected installed mcp version $expectedMcpVersion, got $mcp_version" >&2
           exit 1
         fi
 

@@ -10,9 +10,9 @@
 let
   inherit (release.ghidraMcp) version;
 
-  mcp_1_28_1 = python313Packages.callPackage ./mcp-sdk.nix { inherit release; };
+  mcp = python313Packages.callPackage ./mcp-sdk.nix { inherit release; };
 
-  pythonEnv = python313.withPackages (_: [ mcp_1_28_1 ]);
+  pythonEnv = python313.withPackages (_: [ mcp ]);
 in
 stdenvNoCC.mkDerivation {
   pname = "ghidra-mcp-bridge";
@@ -32,7 +32,7 @@ stdenvNoCC.mkDerivation {
   '';
 
   passthru = {
-    mcp = mcp_1_28_1;
+    inherit mcp;
     releaseMetadata = release.ghidraMcp;
     sourceCommit = release.ghidraMcp.source.rev;
     tagObject = release.ghidraMcp.source.tagObject;
