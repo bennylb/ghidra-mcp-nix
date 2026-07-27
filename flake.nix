@@ -55,7 +55,6 @@
           statix
         ];
         JAVA_HOME = "${pkgs.jdk21}";
-        GHIDRA_HOME = "${pkgs.ghidra}/lib/ghidra";
       };
 
       formatter.${system} = pkgs.nixfmt-tree;

@@ -39,23 +39,26 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = pkgs.ghidra.version == requiredGhidraVersion;
-        message = "GhidraMCP ${ghidraMcpVersion} requires pkgs.ghidra ${requiredGhidraVersion}.";
-      }
-      {
-        assertion = !cfg.enableCodexIntegration || config.programs.codex.enable;
-        message = "programs.ghidra-mcp.enableCodexIntegration requires programs.codex.enable.";
-      }
-    ];
+    assertions =
+      (lib.optional (cfg.package ? ghidraVersion) {
+        assertion = cfg.package.ghidraVersion == requiredGhidraVersion;
+        message = "programs.ghidra-mcp.package has ghidraVersion ${cfg.package.ghidraVersion}, but GhidraMCP ${ghidraMcpVersion} requires Ghidra ${requiredGhidraVersion}.";
+      })
+      ++ (lib.optional (cfg.package ? requiredGhidraVersion) {
+        assertion = cfg.package.requiredGhidraVersion == requiredGhidraVersion;
+        message = "programs.ghidra-mcp.package has requiredGhidraVersion ${cfg.package.requiredGhidraVersion}, but GhidraMCP ${ghidraMcpVersion} requires Ghidra ${requiredGhidraVersion}.";
+      })
+      ++ [
+        {
+          assertion = !cfg.enableCodexIntegration || config.programs.codex.enable;
+          message = "programs.ghidra-mcp.enableCodexIntegration requires programs.codex.enable.";
+        }
+      ];
 
     home.packages = [
       cfg.package
       cfg.bridgePackage
     ];
-
-    home.sessionVariables.GHIDRA_HOME = lib.mkDefault "${pkgs.ghidra}/lib/ghidra";
 
     programs.codex.settings = lib.mkIf cfg.enableCodexIntegration {
       mcp_servers.ghidra = {

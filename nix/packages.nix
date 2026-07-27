@@ -11,6 +11,7 @@ let
     passthru = (oldAttrs.passthru or { }) // {
       ghidraMcpExtension = ghidra-mcp-extension;
       ghidraMcpVersion = release.ghidraMcp.version;
+      ghidraVersion = pkgs.ghidra.version;
       requiredGhidraVersion = release.ghidraMcp.requiredGhidraVersion;
     };
   });
