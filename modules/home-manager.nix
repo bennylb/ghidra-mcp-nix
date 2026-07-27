@@ -30,22 +30,14 @@ in
 
     package = lib.mkOption {
       type = lib.types.package;
-      default =
-        if isSupported then
-          flakePackages.ghidra-with-mcp
-        else
-          throw unsupportedMessage;
+      default = if isSupported then flakePackages.ghidra-with-mcp else throw unsupportedMessage;
       defaultText = lib.literalExpression "ghidra-mcp-nix.packages.\${pkgs.system}.ghidra-with-mcp";
       description = "Ghidra package composed with the GhidraMCP extension.";
     };
 
     bridgePackage = lib.mkOption {
       type = lib.types.package;
-      default =
-        if isSupported then
-          flakePackages.ghidra-mcp-bridge
-        else
-          throw unsupportedMessage;
+      default = if isSupported then flakePackages.ghidra-mcp-bridge else throw unsupportedMessage;
       defaultText = lib.literalExpression "ghidra-mcp-nix.packages.\${pkgs.system}.ghidra-mcp-bridge";
       description = "Packaged GhidraMCP Python bridge.";
     };

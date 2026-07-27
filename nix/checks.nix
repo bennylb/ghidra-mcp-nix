@@ -117,7 +117,9 @@ let
     ];
   };
 
-  failedUnsupportedAssertions = builtins.filter (a: !a.assertion) unsupportedSystemEval.config.assertions;
+  failedUnsupportedAssertions = builtins.filter (
+    a: !a.assertion
+  ) unsupportedSystemEval.config.assertions;
 in
 assert lib.assertMsg (lib.any (a: a.message == unsupportedMessage) failedUnsupportedAssertions)
   "unsupported-system-message: expected assertion ${unsupportedMessage}, got ${builtins.toJSON failedUnsupportedAssertions}";

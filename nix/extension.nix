@@ -7,106 +7,88 @@
   src,
   stdenv,
   unzip,
+  xmlstarlet,
   supportedSystems,
 }:
 let
   inherit (release.ghidraMcp) version requiredGhidraVersion;
 
-  ghidraJars = [
-    {
-      artifact = "Base";
-      path = "Ghidra/Features/Base/lib/Base.jar";
-    }
-    {
-      artifact = "Decompiler";
-      path = "Ghidra/Features/Decompiler/lib/Decompiler.jar";
-    }
-    {
-      artifact = "Docking";
-      path = "Ghidra/Framework/Docking/lib/Docking.jar";
-    }
-    {
-      artifact = "Generic";
-      path = "Ghidra/Framework/Generic/lib/Generic.jar";
-    }
-    {
-      artifact = "Project";
-      path = "Ghidra/Framework/Project/lib/Project.jar";
-    }
-    {
-      artifact = "SoftwareModeling";
-      path = "Ghidra/Framework/SoftwareModeling/lib/SoftwareModeling.jar";
-    }
-    {
-      artifact = "Utility";
-      path = "Ghidra/Framework/Utility/lib/Utility.jar";
-    }
-    {
-      artifact = "Gui";
-      path = "Ghidra/Framework/Gui/lib/Gui.jar";
-    }
-    {
-      artifact = "FileSystem";
-      path = "Ghidra/Framework/FileSystem/lib/FileSystem.jar";
-    }
-    {
-      artifact = "Graph";
-      path = "Ghidra/Framework/Graph/lib/Graph.jar";
-    }
-    {
-      artifact = "DB";
-      path = "Ghidra/Framework/DB/lib/DB.jar";
-    }
-    {
-      artifact = "Emulation";
-      path = "Ghidra/Framework/Emulation/lib/Emulation.jar";
-    }
-    {
-      artifact = "PDB";
-      path = "Ghidra/Features/PDB/lib/PDB.jar";
-    }
-    {
-      artifact = "FunctionID";
-      path = "Ghidra/Features/FunctionID/lib/FunctionID.jar";
-    }
-    {
-      artifact = "Help";
-      path = "Ghidra/Framework/Help/lib/Help.jar";
-    }
-    {
-      artifact = "Debugger-api";
-      path = "Ghidra/Debug/Debugger-api/lib/Debugger-api.jar";
-    }
-    {
-      artifact = "Framework-TraceModeling";
-      path = "Ghidra/Debug/Framework-TraceModeling/lib/Framework-TraceModeling.jar";
-    }
-    {
-      artifact = "Debugger-rmi-trace";
-      path = "Ghidra/Debug/Debugger-rmi-trace/lib/Debugger-rmi-trace.jar";
-    }
-  ];
+  # Seed a fixed-output Maven repository with the Ghidra artifacts declared by
+  # the pinned upstream pom.xml. Paths are discovered under ${ghidra}/lib/ghidra
+  # by exact jar basename (${artifactId}.jar), not a hand-maintained map.
+  seedGhidraMavenRepository = ''
+    pomGhidraVersion="$(
+      xmlstarlet sel \
+        -N m=http://maven.apache.org/POM/4.0.0 \
+        -t -v '/m:project/m:properties/m:ghidra.version' \
+        pom.xml
+    )"
+    if [ -z "$pomGhidraVersion" ]; then
+      echo "seedGhidraMavenRepository: pom.xml is missing <ghidra.version>" >&2
+      exit 1
+    fi
+    if [ "$pomGhidraVersion" != "${requiredGhidraVersion}" ]; then
+      echo "seedGhidraMavenRepository: pom ghidra.version is $pomGhidraVersion, expected ${requiredGhidraVersion}" >&2
+      exit 1
+    fi
 
-  seedGhidraMavenRepository = lib.concatMapStringsSep "\n" (
-    jar:
-    let
-      artifactDirectory = "$out/.m2/ghidra/${jar.artifact}/${requiredGhidraVersion}";
-    in
-    ''
-      mkdir -p "${artifactDirectory}"
-      cp "${ghidra}/lib/ghidra/${jar.path}" \
-        "${artifactDirectory}/${jar.artifact}-${requiredGhidraVersion}.jar"
-      cat > "${artifactDirectory}/${jar.artifact}-${requiredGhidraVersion}.pom" <<'EOF'
-      <project xmlns="http://maven.apache.org/POM/4.0.0">
-        <modelVersion>4.0.0</modelVersion>
-        <groupId>ghidra</groupId>
-        <artifactId>${jar.artifact}</artifactId>
-        <version>${requiredGhidraVersion}</version>
-        <packaging>jar</packaging>
-      </project>
-      EOF
-    ''
-  ) ghidraJars;
+    artifactsFile="$(mktemp)"
+    xmlstarlet sel \
+      -N m=http://maven.apache.org/POM/4.0.0 \
+      -t -m '//m:dependency[m:groupId="ghidra"]' -v 'm:artifactId' -n \
+      pom.xml \
+      | sed '/^$/d' \
+      > "$artifactsFile"
+
+    if [ ! -s "$artifactsFile" ]; then
+      echo "seedGhidraMavenRepository: no ghidra dependencies found in pom.xml" >&2
+      exit 1
+    fi
+
+    duplicates="$(sort "$artifactsFile" | uniq -d)"
+    if [ -n "$duplicates" ]; then
+      echo "seedGhidraMavenRepository: duplicate ghidra artifactIds in pom.xml:" >&2
+      echo "$duplicates" >&2
+      exit 1
+    fi
+
+    while IFS= read -r artifact; do
+      case "$artifact" in
+        "" | *[!A-Za-z0-9._-]*)
+          echo "seedGhidraMavenRepository: unsafe ghidra artifactId: $artifact" >&2
+          exit 1
+          ;;
+      esac
+
+      # Resolve by exact basename so we do not hardcode Ghidra's module layout.
+      matchesFile="$(mktemp)"
+      find "${ghidra}/lib/ghidra" -type f -name "''${artifact}.jar" > "$matchesFile"
+      matchCount="$(wc -l < "$matchesFile" | tr -d ' ')"
+      if [ "$matchCount" -ne 1 ]; then
+        echo "seedGhidraMavenRepository: expected exactly one ''${artifact}.jar under ${ghidra}/lib/ghidra, found $matchCount" >&2
+        if [ -s "$matchesFile" ]; then
+          cat "$matchesFile" >&2
+        fi
+        exit 1
+      fi
+      jarPath="$(cat "$matchesFile")"
+      rm -f "$matchesFile"
+
+      artifactDirectory="$out/.m2/ghidra/''${artifact}/${requiredGhidraVersion}"
+      mkdir -p "$artifactDirectory"
+      cp "$jarPath" "$artifactDirectory/''${artifact}-${requiredGhidraVersion}.jar"
+      cat > "$artifactDirectory/''${artifact}-${requiredGhidraVersion}.pom" <<EOF
+    <project xmlns="http://maven.apache.org/POM/4.0.0">
+      <modelVersion>4.0.0</modelVersion>
+      <groupId>ghidra</groupId>
+      <artifactId>''${artifact}</artifactId>
+      <version>${requiredGhidraVersion}</version>
+      <packaging>jar</packaging>
+    </project>
+    EOF
+    done < "$artifactsFile"
+    rm -f "$artifactsFile"
+  '';
 in
 assert lib.assertMsg (ghidra.version == requiredGhidraVersion)
   "ghidra-mcp ${version} requires Ghidra ${requiredGhidraVersion}, but nixpkgs provides ${ghidra.version}";
@@ -115,7 +97,7 @@ maven.buildMavenPackage {
   inherit src version;
 
   mvnJdk = jdk21;
-  mvnHash = "sha256-2bTvkFwGRFgZI+HgCORGlv5kc7iBaE5ukUc8PFvmtAY=";
+  mvnHash = "sha256-8dW+bX2YvHS3fSbWZKTefOftozaQumW9crLkgrsiJDY=";
   mvnGoal = "package";
   mvnParameters = "assembly:single -DskipTests";
   doCheck = false;
@@ -124,7 +106,10 @@ maven.buildMavenPackage {
     postPatch = seedGhidraMavenRepository;
   };
 
-  nativeBuildInputs = [ unzip ];
+  nativeBuildInputs = [
+    unzip
+    xmlstarlet
+  ];
 
   installPhase = ''
     runHook preInstall
