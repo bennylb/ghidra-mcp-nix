@@ -63,7 +63,6 @@ buildPythonPackage {
 
   pythonImportsCheck = [ "mcp" ];
 
-  # Upstream suite classification and hermetic test enablement are deferred to Phase 5.
   doCheck = false;
 
   meta = {
