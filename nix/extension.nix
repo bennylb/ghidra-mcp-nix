@@ -97,19 +97,37 @@ maven.buildMavenPackage {
   inherit src version;
 
   mvnJdk = jdk21;
-  mvnHash = "sha256-8dW+bX2YvHS3fSbWZKTefOftozaQumW9crLkgrsiJDY=";
+  # Includes surefire-junit4 (test-only; not resolved while assembly uses -DskipTests).
+  mvnHash = "sha256-tmtBV3iWI+BHqBLodphE7beyKzVdKhjlNmzS2HUrEKI=";
   mvnGoal = "package";
+  # Keep assembly from selecting the full upstream suite; hermetic tests run in checkPhase.
   mvnParameters = "assembly:single -DskipTests";
-  doCheck = false;
+  doCheck = true;
 
   mvnFetchExtraArgs = {
     postPatch = seedGhidraMavenRepository;
+    # package -DskipTests never resolves surefire providers; pull them for offline checkPhase.
+    postBuild = ''
+      mvn -B dependency:get \
+        -Dartifact=org.apache.maven.surefire:surefire-junit4:3.5.6 \
+        -Dmaven.repo.local=$out/.m2
+    '';
   };
 
   nativeBuildInputs = [
     unzip
     xmlstarlet
   ];
+
+  # Only upstream's offline hermetic suite (com.xebyte.offline.*Test). Other Maven
+  # tests need live Ghidra/GUI/project state; Python/MCP/integration suites are out of scope.
+  # Point maven.repo.local at the fixed repo materialised in buildPhase (./.m2); bare
+  # mvn would otherwise try $HOME/.m2 under the sandbox (/var/empty).
+  checkPhase = ''
+    runHook preCheck
+    mvn --offline -nsu "-Dmaven.repo.local=$PWD/.m2" test -Dtest='com.xebyte.offline.*Test'
+    runHook postCheck
+  '';
 
   installPhase = ''
     runHook preInstall
