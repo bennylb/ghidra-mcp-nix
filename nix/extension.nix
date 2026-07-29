@@ -98,7 +98,7 @@ maven.buildMavenPackage {
 
   mvnJdk = jdk21;
   # Includes surefire-junit4 (test-only; not resolved while assembly uses -DskipTests).
-  mvnHash = "sha256-tmtBV3iWI+BHqBLodphE7beyKzVdKhjlNmzS2HUrEKI=";
+  mvnHash = "sha256-t8JfxBLUfIKVrMH9VtbvwNuIQG670kcVlA8w6gcCS/k=";
   mvnGoal = "package";
   # Keep assembly from selecting the full upstream suite; hermetic tests run in checkPhase.
   mvnParameters = "assembly:single -DskipTests";
@@ -125,7 +125,9 @@ maven.buildMavenPackage {
   # mvn would otherwise try $HOME/.m2 under the sandbox (/var/empty).
   checkPhase = ''
     runHook preCheck
-    mvn --offline -nsu "-Dmaven.repo.local=$PWD/.m2" test -Dtest='com.xebyte.offline.*Test'
+    mvn --offline -nsu "-Dmaven.repo.local=$PWD/.m2" test \
+      -Djacoco.skip=true \
+      -Dtest='com.xebyte.offline.*Test'
     runHook postCheck
   '';
 

@@ -127,16 +127,26 @@ assert lib.assertMsg (lib.any (a: a.message == unsupportedMessage) failedUnsuppo
   bridge-smoke =
     let
       pythonEnv = pkgs.python313.withPackages (_: [ ghidra-mcp-bridge.passthru.mcp ]);
+      bridgeSitePackages = pkgs.python313.sitePackages;
+      expectedBridgeVersion = ghidra-mcp-bridge.version;
       expectedMcpVersion = ghidra-mcp-bridge.passthru.mcp.version;
     in
     pkgs.runCommand "bridge-smoke"
       {
         nativeBuildInputs = [ pythonEnv ];
         bridge = ghidra-mcp-bridge;
-        inherit expectedMcpVersion;
+        inherit bridgeSitePackages expectedBridgeVersion expectedMcpVersion;
       }
       ''
         set -euo pipefail
+
+        export PYTHONPATH="$bridge/$bridgeSitePackages''${PYTHONPATH:+:$PYTHONPATH}"
+
+        bridge_version="$(python -c 'import importlib.metadata; print(importlib.metadata.version("ghidra-mcp-bridge"))')"
+        if [ "$bridge_version" != "$expectedBridgeVersion" ]; then
+          echo "bridge-smoke: expected installed bridge version $expectedBridgeVersion, got $bridge_version" >&2
+          exit 1
+        fi
 
         mcp_version="$(python -c 'import importlib.metadata; print(importlib.metadata.version("mcp"))')"
         if [ "$mcp_version" != "$expectedMcpVersion" ]; then
@@ -144,24 +154,7 @@ assert lib.assertMsg (lib.any (a: a.message == unsupportedMessage) failedUnsuppo
           exit 1
         fi
 
-        bridge_script="$bridge/share/ghidra-mcp/bridge_mcp_ghidra.py"
-        test -f "$bridge_script" || {
-          echo "bridge-smoke: installed bridge script missing at $bridge_script" >&2
-          exit 1
-        }
-
-        python - "$bridge_script" <<'PY'
-        import importlib.util
-        import sys
-        from pathlib import Path
-
-        path = Path(sys.argv[1])
-        spec = importlib.util.spec_from_file_location("bridge_mcp_ghidra", path)
-        if spec is None or spec.loader is None:
-            raise SystemExit(f"bridge-smoke: failed to create import spec for {path}")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        PY
+        python -c 'import bridge_mcp_ghidra'
 
         "$bridge/bin/bridge-mcp-ghidra" --help >/dev/null
 

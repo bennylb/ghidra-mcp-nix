@@ -2,16 +2,16 @@
 # commits; tag names and tag objects are retained only as provenance.
 {
   ghidraMcp = {
-    version = "5.14.2";
+    version = "6.0.0";
     requiredGhidraVersion = "12.1.2";
 
     source = {
       owner = "bethington";
       repo = "ghidra-mcp";
-      tag = "v5.14.2";
-      rev = "f4a1175b23f797cb19fb0f66c4ba19ff72684e72";
-      tagObject = "bbfed0e02b64f0f93f6d448b75ca4d391d0dddca";
-      hash = "sha256-2EMETCttJAz53GQaJDHtegb8+T2cHKmHZVMPrV5Cwxc=";
+      tag = "v6.0.0";
+      rev = "8cd2078e10b9ba28b188cb84ce5b9051a904b995";
+      tagObject = "65acb75a2c6671885541c2989e7f9aa3c9bae54a";
+      hash = "sha256-LnhhJwycO8NQV+YaTP7ZoxGkoGLkc14BwY66wczbpp0=";
     };
   };
 

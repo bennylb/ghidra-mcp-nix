@@ -1,36 +1,24 @@
 {
   lib,
-  makeWrapper,
-  python313,
   python313Packages,
   release,
   src,
-  stdenvNoCC,
   supportedSystems,
 }:
 let
   inherit (release.ghidraMcp) version;
 
   mcp = python313Packages.callPackage ./mcp-sdk.nix { inherit release; };
-
-  pythonEnv = python313.withPackages (_: [ mcp ]);
 in
-stdenvNoCC.mkDerivation {
+python313Packages.buildPythonApplication {
   pname = "ghidra-mcp-bridge";
   inherit src version;
+  pyproject = true;
 
-  nativeBuildInputs = [ makeWrapper ];
-
-  installPhase = ''
-    runHook preInstall
-
-    install -Dm444 bridge_mcp_ghidra.py \
-      "$out/share/ghidra-mcp/bridge_mcp_ghidra.py"
-    makeWrapper "${pythonEnv}/bin/python" "$out/bin/bridge-mcp-ghidra" \
-      --add-flags "$out/share/ghidra-mcp/bridge_mcp_ghidra.py"
-
-    runHook postInstall
-  '';
+  build-system = [ python313Packages.hatchling ];
+  dependencies = [ mcp ];
+  doCheck = false;
+  pythonImportsCheck = [ "bridge_mcp_ghidra" ];
 
   passthru = {
     inherit mcp;
