@@ -5,7 +5,7 @@ Reproducible Nix packages for
 the GhidraMCP extension available, plus the Python MCP stdio bridge.
 
 This flake supports **`aarch64-darwin` only**. Current release: Ghidra 12.1.2,
-ghidra-mcp 5.14.2.
+ghidra-mcp 6.0.0.
 
 ## Install with Home Manager
 
@@ -50,6 +50,13 @@ bridge package.
   extension's required Ghidra version. Overrides that omit that metadata are
   not validated for it.
 
+## Configure MCP clients manually
+
+For OpenCode, Kimi Code, Codex CLI, oh-my-pi, and Claude Code, see
+[Manual MCP client configuration](MCP_CLIENT_CONFIGURATION.md). The guide uses
+each client's native user-level configuration and does not add client-specific
+package integration.
+
 ## Direct use
 
 Published flake (consumers):
@@ -72,7 +79,7 @@ nix build path:.#ghidra-mcp-extension
 
 | Output | Kind | Purpose |
 | --- | --- | --- |
-| `ghidra-mcp-bridge` | package / app | Python stdio bridge with a bridge-private MCP SDK runtime |
+| `ghidra-mcp-bridge` | package / app | Upstream Python application with a bridge-private MCP SDK runtime |
 | `ghidra-mcp-extension` | package | Independently buildable Java extension |
 | `ghidra-with-mcp` | package (also `default`) | Ghidra composed with the extension |
 | `ghidra` / `default` | app | Launch composed Ghidra |
@@ -91,6 +98,11 @@ not copied into the user's Ghidra profile (for example `~/Library/ghidra`).
 
 Nix generations install and remove the extension immutably. Plugin enablement
 and Ghidra tool preferences remain mutable user state.
+
+GhidraMCP 6.0.0 defaults to an unauthenticated HTTP server bound to the
+loopback interface (`127.0.0.1`). This is intended for a trusted, single-user
+workstation. Do not expose it to a LAN or the internet without configuring the
+upstream authentication and binding controls.
 
 ## Updating releases
 
@@ -141,7 +153,7 @@ packaging in this repository is MIT licensed.
 
 | Check | Proves |
 | --- | --- |
-| `bridge-smoke` | Installed bridge imports, reports the packaged MCP distribution version, and accepts `--help` |
+| `bridge-smoke` | Installed bridge and MCP distributions report their packaged versions, the bridge package imports, and its CLI accepts `--help` |
 | `extension-layout` | Standalone extension has the expected layout and metadata |
 | `extension-composition` | Composed Ghidra package contains the same extension artifacts |
 | `home-manager-config` | Default Home Manager enablement evaluates/builds with the intended packages |
