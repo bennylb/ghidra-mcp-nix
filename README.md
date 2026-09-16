@@ -5,7 +5,9 @@ Reproducible Nix packages for
 the GhidraMCP extension available, plus the Python MCP stdio bridge.
 
 This flake supports **`aarch64-darwin` only**. Current release: Ghidra 12.1.2,
-ghidra-mcp 6.0.0.
+ghidra-mcp 6.0.0, with the loopback Host-allowlist fix backported from
+[bethington/ghidra-mcp#510](https://github.com/bethington/ghidra-mcp/pull/510)
+(commit `b71cf97f6a62444509b51071a634db247677d8a3`).
 
 ## Install with Home Manager
 

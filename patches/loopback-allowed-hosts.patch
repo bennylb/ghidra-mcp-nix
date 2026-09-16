@@ -1,0 +1,23 @@
+diff --git a/python/bridge_mcp_ghidra/cli.py b/python/bridge_mcp_ghidra/cli.py
+index f9a3952..9b90464 100644
+--- a/python/bridge_mcp_ghidra/cli.py
++++ b/python/bridge_mcp_ghidra/cli.py
+@@ -159,7 +159,17 @@ def main():
+         mcp.settings.port = args.mcp_port
+ 
+     _host = args.mcp_host
+-    if _host not in {"127.0.0.1", "localhost", "::1"}:
++    if _host in {"127.0.0.1", "localhost", "::1"}:
++        extra = [h.strip() for h in os.environ.get("GHIDRA_MCP_ALLOWED_HOSTS", "").split(",") if h.strip()]
++        if extra:
++            security = mcp.settings.transport_security
++            mcp.settings.transport_security = security.model_copy(
++                update={
++                    "allowed_hosts": security.allowed_hosts + [f"{h}:*" for h in extra],
++                    "allowed_origins": security.allowed_origins + [f"http://{h}:*" for h in extra],
++                }
++            )
++    else:
+         if _host in {"0.0.0.0", "::"}:
+             # Wildcard bind is the MOST exposed configuration — keep
+             # DNS-rebinding protection ON and allow only the machine's

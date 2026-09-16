@@ -98,7 +98,7 @@ maven.buildMavenPackage {
 
   mvnJdk = jdk21;
   # Includes surefire-junit4 (test-only; not resolved while assembly uses -DskipTests).
-  mvnHash = "sha256-F9j0VU/5Llrbcu1mRdFJ/Te5thrQZNqAQXL4+paz0Sc=";
+  mvnHash = "sha256-t8JfxBLUfIKVrMH9VtbvwNuIQG670kcVlA8w6gcCS/k=";
   mvnGoal = "package";
   # Keep assembly from selecting the full upstream suite; hermetic tests run in checkPhase.
   mvnParameters = "assembly:single -DskipTests";
