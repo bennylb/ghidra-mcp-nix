@@ -30,7 +30,9 @@
         inherit (ghidraMcp)
           ghidra-mcp-bridge
           ghidra-mcp-extension
+          ghidra-tables-extension
           ghidra-with-mcp
+          ghidra-with-mcp-and-tables
           ;
         default = ghidraMcp.ghidra-with-mcp;
       };

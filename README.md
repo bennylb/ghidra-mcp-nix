@@ -84,6 +84,8 @@ nix build path:.#ghidra-mcp-extension
 | `ghidra-mcp-bridge` | package / app | Upstream Python application with a bridge-private MCP SDK runtime |
 | `ghidra-mcp-extension` | package | Independently buildable Java extension |
 | `ghidra-with-mcp` | package (also `default`) | Ghidra composed with the extension |
+| `ghidra-tables-extension` | package | [GhidraTables](https://github.com/daskey/GhidraTables) (Denso ECU tables), pinned by commit, built against nixpkgs' Ghidra |
+| `ghidra-with-mcp-and-tables` | package | Ghidra with both GhidraMCP and GhidraTables; use as `programs.ghidra-mcp.package` |
 | `ghidra` / `default` | app | Launch composed Ghidra |
 | `ghidra-mcp-bridge` | app | Run `bridge-mcp-ghidra` |
 

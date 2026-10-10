@@ -15,6 +15,16 @@
     };
   };
 
+  # No upstream tags or releases: pinned by commit only.
+  ghidraTables = {
+    source = {
+      owner = "daskey";
+      repo = "GhidraTables";
+      rev = "b1af2b617e55d9499d187e6d414fb3c9da159765";
+      hash = "sha256-uWuw6NSROSGEH34e02bEC8XuV7jLs9wtuGBbPvt7Gec=";
+    };
+  };
+
   mcpSdk = {
     version = "1.28.1";
 
