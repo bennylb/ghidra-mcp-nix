@@ -11,7 +11,15 @@
   supportedSystems,
 }:
 let
-  inherit (release.ghidraMcp) version requiredGhidraVersion;
+  inherit (release.ghidraMcp) version requiredGhidraVersion upstreamGhidraVersion;
+
+  # Point upstream's pom at the Ghidra release nixpkgs provides. Every Ghidra
+  # dependency and extension.properties derive from this single property.
+  retargetGhidraVersion = lib.optionalString (upstreamGhidraVersion != requiredGhidraVersion) ''
+    substituteInPlace pom.xml --replace-fail \
+      "<ghidra.version>${upstreamGhidraVersion}</ghidra.version>" \
+      "<ghidra.version>${requiredGhidraVersion}</ghidra.version>"
+  '';
 
   # Seed a fixed-output Maven repository with the Ghidra artifacts declared by
   # the pinned upstream pom.xml. Paths are discovered under ${ghidra}/lib/ghidra
@@ -98,14 +106,16 @@ maven.buildMavenPackage {
 
   mvnJdk = jdk21;
   # Includes surefire-junit4 (test-only; not resolved while assembly uses -DskipTests).
-  mvnHash = "sha256-gt0Qzvz68v6ymIVcr4rHpoBvbCvTKgM+B/4dPC3ef3o=";
+  mvnHash = "sha256-MCLEMy16ex0+FSd3425FwZespNkPTXZ+b2/8geoPYhw=";
   mvnGoal = "package";
   # Keep assembly from selecting the full upstream suite; hermetic tests run in checkPhase.
   mvnParameters = "assembly:single -DskipTests";
   doCheck = true;
 
+  postPatch = retargetGhidraVersion;
+
   mvnFetchExtraArgs = {
-    postPatch = seedGhidraMavenRepository;
+    postPatch = retargetGhidraVersion + seedGhidraMavenRepository;
     # package -DskipTests never resolves surefire providers; pull them for offline checkPhase.
     postBuild = ''
       mvn -B dependency:get \

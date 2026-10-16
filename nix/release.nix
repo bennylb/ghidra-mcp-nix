@@ -3,7 +3,12 @@
 {
   ghidraMcp = {
     version = "6.0.0";
-    requiredGhidraVersion = "12.1.2";
+    # Ghidra release the extension is built against and must match at runtime.
+    requiredGhidraVersion = "12.1.4";
+    # <ghidra.version> declared by the pinned upstream pom.xml. When it differs
+    # from requiredGhidraVersion the pom is retargeted at build time; upstream's
+    # own 12.1.2 -> 12.1.4 bumps (#447, #542) changed no Java sources.
+    upstreamGhidraVersion = "12.1.2";
 
     source = {
       owner = "bethington";

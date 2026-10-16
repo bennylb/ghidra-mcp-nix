@@ -4,7 +4,7 @@ Reproducible Nix packages for
 [`bethington/ghidra-mcp`](https://github.com/bethington/ghidra-mcp): Ghidra with
 the GhidraMCP extension available, plus the Python MCP stdio bridge.
 
-This flake supports **`aarch64-darwin` only**. Current release: Ghidra 12.1.2,
+This flake supports **`aarch64-darwin` only**. Current release: Ghidra 12.1.4,
 ghidra-mcp 6.0.0, with the loopback Host-allowlist fix backported from
 [bethington/ghidra-mcp#510](https://github.com/bethington/ghidra-mcp/pull/510)
 (commit `b71cf97f6a62444509b51071a634db247677d8a3`).
@@ -111,7 +111,9 @@ upstream authentication and binding controls.
 `nix/release.nix` is the single entrypoint for release metadata:
 
 - ghidra-mcp version
-- required Ghidra version
+- required Ghidra version (must equal nixpkgs' `ghidra.version`)
+- upstream Ghidra version (the pinned pom's `<ghidra.version>`; the pom is
+  retargeted to the required version when they differ)
 - ghidra-mcp immutable revision and source hash
 - MCP SDK version, immutable revision, and source hash
 
