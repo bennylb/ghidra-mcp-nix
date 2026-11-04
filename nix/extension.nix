@@ -13,6 +13,14 @@
 let
   inherit (release.ghidraMcp) version requiredGhidraVersion;
 
+  # Upstream's offline hermetic suite. The excluded test compares a canonicalised
+  # path with java.io.tmpdir as given, which fails where the temp directory sits
+  # behind a symlink, as on macOS (/var -> /private/var).
+  offlineTestSelection = lib.concatStringsSep "," [
+    "com.xebyte.offline.*Test"
+    "!com.xebyte.offline.SharedProjectLocatorTest#testResolveProjectDirOverrideIsContainmentChecked"
+  ];
+
   # Seed a fixed-output Maven repository with the Ghidra artifacts declared by
   # the pinned upstream pom.xml. Paths are discovered under ${ghidra}/lib/ghidra
   # by exact jar basename (${artifactId}.jar), not a hand-maintained map.
@@ -97,8 +105,8 @@ maven.buildMavenPackage {
   inherit src version;
 
   mvnJdk = jdk21;
-  # Includes surefire-junit4 (test-only; not resolved while assembly uses -DskipTests).
-  mvnHash = "sha256-F9j0VU/5Llrbcu1mRdFJ/Te5thrQZNqAQXL4+paz0Sc=";
+  # Includes surefire's test providers (not resolved while assembly uses -DskipTests).
+  mvnHash = "sha256-FqXXQbE61rdrbzwZhZlQBAQCcA2zKISOIqRfE9ZLJKg=";
   mvnGoal = "package";
   # Keep assembly from selecting the full upstream suite; hermetic tests run in checkPhase.
   mvnParameters = "assembly:single -DskipTests";
@@ -106,11 +114,13 @@ maven.buildMavenPackage {
 
   mvnFetchExtraArgs = {
     postPatch = seedGhidraMavenRepository;
-    # package -DskipTests never resolves surefire providers; pull them for offline checkPhase.
+    # package -DskipTests never resolves surefire providers. Surefire 3.6 picks its
+    # JUnit Platform and vintage engine artifacts at runtime, so run the checkPhase
+    # selection here to fetch exactly what the offline checkPhase will need.
     postBuild = ''
-      mvn -B dependency:get \
-        -Dartifact=org.apache.maven.surefire:surefire-junit4:3.5.6 \
-        -Dmaven.repo.local=$out/.m2
+      mvn -B "-Dmaven.repo.local=$out/.m2" test \
+        -Djacoco.skip=true \
+        '-Dtest=${offlineTestSelection}'
     '';
   };
 
@@ -127,7 +137,7 @@ maven.buildMavenPackage {
     runHook preCheck
     mvn --offline -nsu "-Dmaven.repo.local=$PWD/.m2" test \
       -Djacoco.skip=true \
-      -Dtest='com.xebyte.offline.*Test'
+      '-Dtest=${offlineTestSelection}'
     runHook postCheck
   '';
 

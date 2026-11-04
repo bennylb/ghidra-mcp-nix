@@ -16,7 +16,10 @@ python313Packages.buildPythonApplication {
   pyproject = true;
 
   build-system = [ python313Packages.hatchling ];
-  dependencies = [ mcp ];
+  dependencies = [
+    mcp
+    python313Packages.pydantic
+  ];
   doCheck = false;
   pythonImportsCheck = [ "bridge_mcp_ghidra" ];
 

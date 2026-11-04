@@ -2,16 +2,18 @@
 # commits; tag names and tag objects are retained only as provenance.
 {
   ghidraMcp = {
-    version = "6.0.0";
-    requiredGhidraVersion = "12.1.2";
+    version = "7.0.0";
+    # Ghidra release the extension is built against and must match at runtime.
+    # Provided by the flake's nixpkgs-ghidra input; move the two together.
+    requiredGhidraVersion = "12.1.4";
 
     source = {
       owner = "bethington";
       repo = "ghidra-mcp";
-      tag = "v6.0.0";
-      rev = "8cd2078e10b9ba28b188cb84ce5b9051a904b995";
-      tagObject = "65acb75a2c6671885541c2989e7f9aa3c9bae54a";
-      hash = "sha256-LnhhJwycO8NQV+YaTP7ZoxGkoGLkc14BwY66wczbpp0=";
+      tag = "v7.0.0";
+      rev = "19e64c75f1be1fcbe413e845f65e549f2361b928";
+      tagObject = "001145c3a3f2748d8f361a4c60e6b28c11758762";
+      hash = "sha256-0RWq1bX3fHY2DR0HQ75ylNCWQbKczvsk8m8/8eSW/Sk=";
     };
   };
 

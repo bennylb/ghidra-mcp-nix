@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
+    # Supplies Ghidra and the extension's build tools, fixed to the Ghidra release
+    # that ghidra-mcp targets. Must not follow a consumer's nixpkgs. Move this rev
+    # together with requiredGhidraVersion in nix/release.nix.
+    nixpkgs-ghidra.url = "github:NixOS/nixpkgs/319e4cebef10cbb636c6ea392137b52ad105336a";
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -14,6 +19,7 @@
     {
       self,
       nixpkgs,
+      nixpkgs-ghidra,
       home-manager,
       ...
     }:
@@ -23,7 +29,8 @@
       supportedSystems = [ system ];
 
       pkgs = import nixpkgs { inherit system; };
-      ghidraMcp = pkgs.callPackage ./nix/packages.nix { inherit supportedSystems; };
+      ghidraPkgs = import nixpkgs-ghidra { inherit system; };
+      ghidraMcp = pkgs.callPackage ./nix/packages.nix { inherit ghidraPkgs supportedSystems; };
     in
     {
       packages.${system} = {

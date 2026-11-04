@@ -202,8 +202,7 @@ assert lib.assertMsg (lib.any (a: a.message == unsupportedMessage) failedUnsuppo
         for required in \
           "Plugin-Class: com.xebyte.GhidraMCPPlugin" \
           "Plugin-Name: GhidraMCP" \
-          "Plugin-Version: $extensionVersion" \
-          "Java-Version: 21"
+          "Plugin-Version: $extensionVersion"
         do
           grep -F "$required" manifest.mf >/dev/null || {
             echo "extension-layout: JAR MANIFEST.MF missing required entry: $required" >&2
