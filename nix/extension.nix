@@ -11,15 +11,15 @@
   supportedSystems,
 }:
 let
-  inherit (release.ghidraMcp) version requiredGhidraVersion upstreamGhidraVersion;
+  inherit (release.ghidraMcp) version requiredGhidraVersion;
 
-  # Point upstream's pom at the Ghidra release nixpkgs provides. Every Ghidra
-  # dependency and extension.properties derive from this single property.
-  retargetGhidraVersion = lib.optionalString (upstreamGhidraVersion != requiredGhidraVersion) ''
-    substituteInPlace pom.xml --replace-fail \
-      "<ghidra.version>${upstreamGhidraVersion}</ghidra.version>" \
-      "<ghidra.version>${requiredGhidraVersion}</ghidra.version>"
-  '';
+  # Upstream's offline hermetic suite. The excluded test compares a canonicalised
+  # path with java.io.tmpdir as given, which fails where the temp directory sits
+  # behind a symlink, as on macOS (/var -> /private/var).
+  offlineTestSelection = lib.concatStringsSep "," [
+    "com.xebyte.offline.*Test"
+    "!com.xebyte.offline.SharedProjectLocatorTest#testResolveProjectDirOverrideIsContainmentChecked"
+  ];
 
   # Seed a fixed-output Maven repository with the Ghidra artifacts declared by
   # the pinned upstream pom.xml. Paths are discovered under ${ghidra}/lib/ghidra
@@ -105,22 +105,22 @@ maven.buildMavenPackage {
   inherit src version;
 
   mvnJdk = jdk21;
-  # Includes surefire-junit4 (test-only; not resolved while assembly uses -DskipTests).
-  mvnHash = "sha256-SkuoJlOKn8m/aSRHAIkmiLvX+fAaBI6KpX7vgdJ658I=";
+  # Includes surefire's test providers (not resolved while assembly uses -DskipTests).
+  mvnHash = "sha256-FqXXQbE61rdrbzwZhZlQBAQCcA2zKISOIqRfE9ZLJKg=";
   mvnGoal = "package";
   # Keep assembly from selecting the full upstream suite; hermetic tests run in checkPhase.
   mvnParameters = "assembly:single -DskipTests";
   doCheck = true;
 
-  postPatch = retargetGhidraVersion;
-
   mvnFetchExtraArgs = {
-    postPatch = retargetGhidraVersion + seedGhidraMavenRepository;
-    # package -DskipTests never resolves surefire providers; pull them for offline checkPhase.
+    postPatch = seedGhidraMavenRepository;
+    # package -DskipTests never resolves surefire providers. Surefire 3.6 picks its
+    # JUnit Platform and vintage engine artifacts at runtime, so run the checkPhase
+    # selection here to fetch exactly what the offline checkPhase will need.
     postBuild = ''
-      mvn -B dependency:get \
-        -Dartifact=org.apache.maven.surefire:surefire-junit4:3.5.6 \
-        -Dmaven.repo.local=$out/.m2
+      mvn -B "-Dmaven.repo.local=$out/.m2" test \
+        -Djacoco.skip=true \
+        '-Dtest=${offlineTestSelection}'
     '';
   };
 
@@ -137,7 +137,7 @@ maven.buildMavenPackage {
     runHook preCheck
     mvn --offline -nsu "-Dmaven.repo.local=$PWD/.m2" test \
       -Djacoco.skip=true \
-      -Dtest='com.xebyte.offline.*Test'
+      '-Dtest=${offlineTestSelection}'
     runHook postCheck
   '';
 

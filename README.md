@@ -5,9 +5,7 @@ Reproducible Nix packages for
 the GhidraMCP extension available, plus the Python MCP stdio bridge.
 
 This flake supports **`aarch64-darwin` only**. Current release: Ghidra 12.1.4,
-ghidra-mcp 6.0.0, with the loopback Host-allowlist fix backported from
-[bethington/ghidra-mcp#510](https://github.com/bethington/ghidra-mcp/pull/510)
-(commit `b71cf97f6a62444509b51071a634db247677d8a3`).
+ghidra-mcp 7.0.0.
 
 ## Install with Home Manager
 
@@ -19,6 +17,10 @@ inputs.ghidra-mcp-nix = {
   inputs.nixpkgs.follows = "nixpkgs";
 };
 ```
+
+Ghidra and the extension's build tools come from the flake's own
+`nixpkgs-ghidra` input, fixed to the Ghidra release ghidra-mcp targets. Do not
+make that input follow your `nixpkgs`.
 
 Import and enable the module:
 
@@ -101,7 +103,7 @@ not copied into the user's Ghidra profile (for example `~/Library/ghidra`).
 Nix generations install and remove the extension immutably. Plugin enablement
 and Ghidra tool preferences remain mutable user state.
 
-GhidraMCP 6.0.0 defaults to an unauthenticated HTTP server bound to the
+GhidraMCP 7.0.0 defaults to an unauthenticated HTTP server bound to the
 loopback interface (`127.0.0.1`). This is intended for a trusted, single-user
 workstation. Do not expose it to a LAN or the internet without configuring the
 upstream authentication and binding controls.
@@ -111,9 +113,9 @@ upstream authentication and binding controls.
 `nix/release.nix` is the single entrypoint for release metadata:
 
 - ghidra-mcp version
-- required Ghidra version (must equal nixpkgs' `ghidra.version`)
-- upstream Ghidra version (the pinned pom's `<ghidra.version>`; the pom is
-  retargeted to the required version when they differ)
+- required Ghidra version (must equal the pinned pom's `<ghidra.version>` and
+  `ghidra.version` from the `nixpkgs-ghidra` input in `flake.nix`, so move that
+  input's revision with it)
 - ghidra-mcp immutable revision and source hash
 - MCP SDK version, immutable revision, and source hash
 

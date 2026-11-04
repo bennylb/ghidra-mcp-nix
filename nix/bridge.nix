@@ -14,10 +14,12 @@ python313Packages.buildPythonApplication {
   pname = "ghidra-mcp-bridge";
   inherit src version;
   pyproject = true;
-  patches = [ ../patches/loopback-allowed-hosts.patch ];
 
   build-system = [ python313Packages.hatchling ];
-  dependencies = [ mcp ];
+  dependencies = [
+    mcp
+    python313Packages.pydantic
+  ];
   doCheck = false;
   pythonImportsCheck = [ "bridge_mcp_ghidra" ];
 
